@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>지식 상태 계산기</title>
+<meta name="description" content="지식 구성요소와 선수관계를 넣으면 가능한 지식 상태와 각 상태에서 지금 배울 수 있는 것(outer fringe)을 계산합니다. 적응형 학습과 AI 프로그래밍 2주 실습 도구.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+
+<!-- Open Graph — 게시판이나 메신저에 링크를 붙였을 때 보이는 정보 -->
+<meta property="og:title" content="지식 상태 계산기">
+<meta property="og:description" content="개념을 쪼개고 선수관계를 이으면 가능한 학습자의 상태가 2ⁿ에서 몇 개로 줄어드는지 계산합니다.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="brand">
+    <div class="eyebrow">적응형 학습과 AI 프로그래밍 · 2주 실습</div>
+    <h1>지식 상태 계산기</h1>
+    <p class="tagline">개념을 쪼개고 “못하면 못한다”를 이으면, 가능한 학습자의 상태가 2<sup>n</sup>에서 몇 개로 줄어드는지 —
+      그리고 각 상태에서 지금 배울 수 있는 것이 무엇인지 계산합니다.</p>
+  </div>
+  <div class="hdr-act">
+    <button class="btn ghost" id="btnExample">예시 불러오기</button>
+    <button class="btn ghost" id="btnClear">비우기</button>
+    <button class="btn ghost" id="btnShare">링크 공유</button>
+    <button class="btn ghost" id="btnSave">파일 저장</button>
+    <button class="btn ghost" id="btnLoad">파일 열기</button>
+    <button class="btn icon" id="btnTheme" title="밝게 / 어둡게" aria-label="밝게 또는 어둡게 전환">◐</button>
+    <input type="file" id="fileIn" class="file-in" accept="application/json,.json">
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" aria-selected="true" data-panel="p1">1 · 지식 구조</button>
+  <button class="tab" role="tab" aria-selected="false" data-panel="p2">2 · Q-matrix 진단</button>
+</div>
+
+<!-- ═══════════ PANEL 1 ═══════════ -->
+<section class="panel on" id="p1">
+<div class="grid">
+  <div class="stack">
+    <div class="card">
+      <div class="card-h"><h2>지식 구성요소</h2><span class="note">다섯 개면 충분 · “~할 수 있다” 한 문장</span></div>
+      <div class="card-b"><div id="kcList"></div>
+        <button class="btn ghost" id="btnAddKC" style="margin-top:8px">＋ 구성요소 추가</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>선수관계</h2><span class="note">먼저 필요한 것에 표시</span></div>
+      <div class="card-b">
+        <div style="overflow-x:auto"><table class="mtx" id="mtx"></table></div>
+        <p class="mtx-legend">가로줄이 <b>배우려는 것</b>, 세로칸이 <b>먼저 필요한 것</b>입니다.
+          “A를 못하면 B도 못한다”가 <b>확실할 때만</b> 표시하십시오 — 잘못 그으면 학습 경로가 막힙니다.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>실습 1 · 하는 순서</h2><span class="note">3주 수업 전 제출</span></div>
+      <div class="card-b" style="padding:6px 16px 16px">
+        <ol class="steps">
+          <li>3~4차시 분량 단원 하나를 고르고, 지식 구성요소를 <b>다섯 개</b>로 쪼갭니다. 각 조각은 “~할 수 있다” 한 문장으로.</li>
+          <li>선수관계를 표시합니다. <b>확실한 것만</b> 긋습니다.</li>
+          <li>오른쪽 <b>2<sup>n</sup>과 실제 상태 수</b>를 한 줄로 적습니다. 예) “32가지가 7가지로, 약 4.6분의 1”.</li>
+          <li>2번 탭에서 문항 <b>여섯 개</b>를 넣고, 가상 응답 하나로 진단해 봅니다.</li>
+        </ol>
+        <p class="mtx-legend" style="margin-top:12px"><b>낼 것 네 가지</b> — 구조 그림 1장 · 계산 결과 한 줄 · Q-matrix와 진단 1건 · 한 줄 답 2개.
+          입력한 내용은 이 브라우저에만 저장되니, 다른 기기에서 이어 하려면 <b>표 복사</b>로 옮겨 두십시오.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="stats" id="stats"></div>
+    <div id="notices" class="stack" style="gap:10px"></div>
+
+    <div class="card">
+      <div class="card-h"><h2>지식 상태 격자</h2>
+        <div class="toolbar">
+          <span class="note">칸을 누르면 자세히 봅니다</span>
+          <button class="btn ghost" id="btnPng" style="padding:4px 10px;font-size:11.5px">PNG 저장</button>
+          <button class="btn ghost" id="btnPrint" style="padding:4px 10px;font-size:11.5px">인쇄 / PDF</button>
+        </div></div>
+      <div class="card-b"><div class="lat-wrap" id="latWrap"></div>
+        <div id="detail" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>상태와 outer fringe</h2>
+        <button class="btn ghost" id="btnCopy" style="padding:4px 10px;font-size:11.5px">표 복사</button></div>
+      <div class="card-b" style="padding:0">
+        <div class="tbl-wrap" style="max-height:430px;overflow-y:auto"><table class="data" id="stateTbl"></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════ PANEL 2 ═══════════ -->
+<section class="panel" id="p2">
+<div class="stack">
+  <div class="card">
+    <div class="card-h"><h2>문항이 요구하는 지식 구성요소</h2>
+      <span class="note">여섯 문항이면 충분 · O = 맞힘, X = 틀림</span></div>
+    <div class="card-b" style="padding:8px 10px">
+      <div class="qwrap"><table class="q" id="qTbl"></table></div>
+      <div style="display:flex;gap:8px;margin-top:10px;padding:0 4px">
+        <button class="btn ghost" id="btnAddItem">＋ 문항 추가</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>자동 진단</h2><span class="note">집합 논리만 사용 — 찍기·실수는 다루지 못함</span></div>
+    <div class="card-b">
+      <div class="tbl-wrap"><table class="data" id="diagTbl"></table></div>
+      <div id="conclusions" style="margin-top:16px"></div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-soft)">
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice"><span class="ic">※</span><span>
+    <b>단독 문항을 꼭 넣으십시오.</b> 구성요소 하나만 요구하는 문항이 있어야 그 개념을 확정하거나 배제할 수 있습니다.
+    반대로 <b>Q-matrix의 표시는 애매하면 찍는 편이 낫습니다</b> — 빠뜨리면 그 개념이 영영 진단되지 않습니다
+    (Im &amp; Corter, 2011). 선수관계 화살표와는 조언이 반대라는 점에 주의하십시오.
+  </span></div>
+</div>
+</section>
+
+<footer>
+  <span>숙명여자대학교 교육공학과 · 적응형 학습과 AI 프로그래밍 (2026-2) · 김태령</span>
+  <span>이론 근거 — Doignon &amp; Falmagne (1985) <i>Spaces for the assessment of knowledge</i></span>
+</footer>
+</div>
+<dialog id="dlgShare">
+  <div class="card-b">
+    <h2>링크로 공유하기</h2>
+    <p class="hint-inline">아래 주소에 지금 입력한 내용이 전부 담겨 있습니다. 게시판에 붙이면 다른 사람이 열어서 그대로 볼 수 있습니다.</p>
+    <input class="share-url" id="shareUrl" readonly aria-label="공유 주소">
+    <div class="toolbar" style="justify-content:flex-end;margin-top:8px">
+      <button class="btn ghost" id="btnCloseShare">닫기</button>
+      <button class="btn primary" id="btnCopyUrl">주소 복사</button>
+    </div>
+  </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script src="assets/ks-core.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

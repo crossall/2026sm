@@ -1,0 +1,11 @@
+{
+  "name": "knowledge-state-calculator",
+  "version": "1.0.0",
+  "description": "지식공간이론 기반 지식 상태 계산기 — 적응형 학습과 AI 프로그래밍 2주 실습 도구",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 5173",
+    "test": "node test/ks-core.test.js"
+  },
+  "license": "CC-BY-4.0"
+}
