@@ -1,0 +1,9 @@
+# Netlify 배포 설정 — 이 폴더를 그대로 올리면 됩니다.
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

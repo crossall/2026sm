@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BKT 계산기</title>
+<meta name="description" content="베이즈 지식 추적의 네 모수를 넣고 응답을 하나씩 주면 확률이 어떻게 갱신되는지, 그리고 그 확률로 어떤 처방이 나가는지 계산합니다. 적응형 학습과 AI 프로그래밍 3주 실습 도구.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+
+<meta property="og:title" content="BKT 계산기">
+<meta property="og:description" content="네 모수를 넣고 응답을 하나씩 주면, 지금 아는가의 확률이 어떻게 움직이고 어떤 처방이 나가는지 보입니다.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="brand">
+    <div class="eyebrow">적응형 학습과 AI 프로그래밍 · 3주 실습</div>
+    <h1>BKT 계산기</h1>
+    <p class="tagline">네 모수를 정하고 응답을 하나씩 주면, “지금 이 개념을 아는가”의 확률이 어떻게 움직이는지 —
+      그리고 그 확률로 어떤 처방과 피드백이 나가는지 계산합니다.</p>
+  </div>
+  <div class="hdr-act">
+    <button class="btn ghost" id="btnExample">예시 불러오기</button>
+    <button class="btn ghost" id="btnReset">기본값으로</button>
+    <button class="btn ghost" id="btnShare">링크 공유</button>
+    <button class="btn ghost" id="btnSave">파일 저장</button>
+    <button class="btn ghost" id="btnLoad">파일 열기</button>
+    <button class="btn icon" id="btnTheme" title="밝게 / 어둡게" aria-label="밝게 또는 어둡게 전환">◐</button>
+    <input type="file" id="fileIn" class="file-in" accept="application/json,.json">
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" id="tab-calc" aria-controls="panel-calc" aria-selected="true">갱신</button>
+  <button class="tab" role="tab" id="tab-cmp" aria-controls="panel-cmp" aria-selected="false">비교와 민감도</button>
+  <button class="tab" role="tab" id="tab-rule" aria-controls="panel-rule" aria-selected="false">규칙표</button>
+</div>
+
+<!-- ══════════════ 탭 1 · 갱신 ══════════════ -->
+<section class="panel on" id="panel-calc" role="tabpanel" aria-labelledby="tab-calc">
+
+  <div class="card">
+    <div class="card-h"><h2>네 모수</h2><span class="note">슬라이더를 움직이면 아래가 전부 다시 계산됩니다</span></div>
+    <div class="card-b">
+      <div class="params" id="params"></div>
+      <div id="alert"></div>
+      <p class="hintline"><b>선다형이면 P(G)는 1 ÷ 선택지 수에서 출발합니다.</b>
+        사지선다 0.25, 오지선다 0.20. 아무도 안 고르는 오답이 섞여 있으면 실질 선택지가 줄어든 것이니 조금 올려 잡으십시오.
+        서술형이면 0에 가깝습니다.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-h"><h2>응답</h2><span class="note">눌러서 O ↔ X 를 바꿉니다</span></div>
+      <div class="card-b">
+        <div class="seq" id="seq"></div>
+        <div class="toolbar" style="margin-top:12px;display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn ghost tiny" id="btnAllO">전부 O</button>
+          <button class="btn ghost tiny" id="btnFirstX">첫 문제만 X</button>
+          <button class="btn ghost tiny" id="btnAdd">칸 늘리기</button>
+          <button class="btn ghost tiny" id="btnDel">칸 줄이기</button>
+        </div>
+        <div class="tiles" id="tiles"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>확률이 어떻게 움직이는가</h2>
+        <button class="btn ghost tiny" id="btnPng">그림으로 저장</button></div>
+      <div class="card-b">
+        <div id="chart"></div>
+        <div class="chart-legend">
+          <span><i style="background:#2E6BB8"></i>지금 응답</span>
+          <span><i style="background:#C06014"></i>전부 맞혔다면</span>
+          <span><i style="background:#A8322D;height:0;border-top:2px dashed #A8322D"></i>숙련 임계값</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>한 걸음씩</h2><span class="note">갱신은 두 단계입니다 — 되돌아보기, 그리고 학습 반영</span></div>
+    <div class="card-b">
+      <div class="tbl-wrap"><table class="data" id="steps"></table></div>
+      <p class="hintline" id="evidence"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 탭 2 · 비교와 민감도 ══════════════ -->
+<section class="panel" id="panel-cmp" role="tabpanel" aria-labelledby="tab-cmp">
+
+  <div class="card">
+    <div class="card-h"><h2>두 조건 비교</h2><span class="note">연속 정답만 넣었을 때</span></div>
+    <div class="card-b">
+      <div class="probe" style="max-width:420px">
+        <div><label for="gB">조건 B 의 P(G)</label><input type="number" id="gB" min="0" max="0.95" step="0.05" value="0.5"></div>
+        <div><label>조건 A 의 P(G)</label><input type="text" id="gA" value="0.20" readonly></div>
+      </div>
+      <div class="tiles" id="cmpTiles"></div>
+      <div class="tbl-wrap" style="margin-top:14px"><table class="data" id="cmpTable"></table></div>
+      <p class="hintline"><b>추측 확률이 높아지면 “맞혔다”가 “안다”의 증거로서 약해집니다.</b>
+        모르는 사람도 맞힐 수 있으니까요. 그래서 같은 연속 정답인데도 숙련 판정이 늦어집니다.
+        문항 형식이 곧 모수입니다.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>민감도</h2><span class="note">한 모수만 바꿔 가며 숙련까지 몇 문제가 걸리는지</span></div>
+    <div class="card-b">
+      <div class="duo">
+        <div><h4>P(G) 추측을 바꾸면</h4><div id="sensG"></div></div>
+        <div><h4>P(S) 실수를 바꾸면</h4><div id="sensS"></div></div>
+      </div>
+      <p class="hintline"><b>연속 정답만 보면 P(S)는 거의 영향을 주지 않습니다.</b>
+        아는데 틀릴 확률이니까 틀린 적이 없으면 쓸 자리가 없죠.
+        P(S)는 오답이 섞였을 때 힘을 씁니다. 위 「응답」에서 X를 하나 넣고 다시 보십시오.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 탭 3 · 규칙표 ══════════════ -->
+<section class="panel" id="panel-rule" role="tabpanel" aria-labelledby="tab-rule">
+
+  <div class="card">
+    <div class="card-h"><h2>기준값</h2><span class="note">바꾸면 아래 조건 문장이 따라 바뀝니다</span></div>
+    <div class="card-b">
+      <div class="thresh">
+        <div><label for="thM">숙련 임계값</label><input type="number" id="thM" min="0.5" max="0.999" step="0.01" value="0.95"></div>
+        <div><label for="thMid">중간 임계값</label><input type="number" id="thMid" min="0.05" max="0.95" step="0.05" value="0.5"></div>
+        <div><label for="thObs">최소 관측 수</label><input type="number" id="thObs" min="1" max="20" step="1" value="3"></div>
+        <div><label for="thStr">연속 오답 기준</label><input type="number" id="thStr" min="1" max="10" step="1" value="3"></div>
+      </div>
+      <p class="hintline">관행은 0.95 · 0.5 · 3 · 3 입니다. <b>임계값을 개념마다 다르게 잡아도 됩니다</b> —
+        다른 개념의 선수조건인 개념은 높게, 잎사귀 개념은 낮게.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>규칙 다섯 줄</h2><span class="note">처방 · 피드백 · 근거를 직접 고쳐 쓰십시오</span></div>
+    <div class="card-b">
+      <div class="tbl-wrap"><table class="rules" id="rules"></table></div>
+      <p class="hintline"><b>순서가 중요합니다.</b> 관측 부족(5번)과 연속 오답(4번)을 먼저 보고, 그다음에 확률을 봅니다.
+        확률부터 보면 데이터가 적은 학생이 계속 3번에 걸려 선수 개념으로 밀려납니다.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>규칙 시험기</h2><span class="note">값을 넣으면 어느 줄이 걸리는지 바로 보입니다</span></div>
+    <div class="card-b">
+      <div class="probe">
+        <div><label for="pbL">현재 P(L)</label><input type="number" id="pbL" min="0" max="1" step="0.01" value="0.42"></div>
+        <div><label for="pbC">그 개념 관측 수</label><input type="number" id="pbC" min="0" max="99" step="1" value="2"></div>
+        <div><label for="pbS">연속 오답 수</label><input type="number" id="pbS" min="0" max="20" step="1" value="0"></div>
+        <div><button class="btn ghost" id="btnPbFlip" style="width:100%">관측 수 2 ↔ 5</button></div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <p class="hintline"><b>관측 수만 2에서 5로 바꿔 보십시오.</b> 확률은 그대로인데 처방이 반대 방향으로 바뀝니다.
+        5번은 <b>같은 개념에서 문항을 더 주는 것</b>이고, 3번은 <b>선수 개념으로 내려보내는 것</b>입니다.
+        확률만 저장하면 이 구분을 할 수 없습니다 — 확률과 관측 횟수를 같이 보관하십시오.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>피드백 수준</h2><span class="note">Van der Kleij 외 (2015) · 컴퓨터 기반 학습환경 한정</span></div>
+    <div class="card-b">
+      <div class="tbl-wrap"><table class="data">
+        <thead><tr><th>수준</th><th>무엇까지 말해 주는가</th><th style="text-align:right">효과크기</th><th>구현하려면 알아야 하는 것</th></tr></thead>
+        <tbody>
+          <tr><td><b>KR</b></td><td>맞았는지 틀렸는지만</td><td class="num">0.05</td><td>정답 여부</td></tr>
+          <tr><td><b>KCR</b></td><td>정답이 무엇인지까지</td><td class="num">0.32</td><td>정답</td></tr>
+          <tr><td><b>EF</b></td><td>왜 그런지 설명까지</td><td class="num">0.49</td><td>학습자가 <b>어떤 절차를 썼는지</b></td></tr>
+        </tbody></table></div>
+      <p class="hintline">0.05는 사실상 0입니다. 아무것도 하지 않은 것과 통계적으로 구분되지 않습니다.
+        그런데 대부분의 온라인 학습 시스템이 주는 것이 KR, 빨간 X 표시 하나입니다.
+        <b>EF를 주려면 학생이 어떤 절차를 썼는지 알아야 하므로, 피드백 수준을 정하는 일이 곧 문항 설계를 정하는 일입니다.</b></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>「적응형 학습과 AI 프로그래밍」 2026-2 · 숙명여자대학교 교육공학과 · 김태령</div>
+  <div class="src">모형: Corbett &amp; Anderson (1995). Knowledge tracing. <i>UMUAI</i>, 4(4).
+    · 식별 불가: Beck &amp; Chang (2007). UM 2007.
+    · 피드백 효과크기: Van der Kleij 외 (2015). <i>RER</i>, 85(4).</div>
+</footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/bkt-core.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

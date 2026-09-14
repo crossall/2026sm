@@ -1,0 +1,11 @@
+{
+  "name": "bkt-calculator",
+  "version": "1.0.0",
+  "description": "베이즈 지식 추적(BKT) 계산기와 진단–처방–피드백 규칙표 — 적응형 학습과 AI 프로그래밍 3주 실습 도구",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 5174",
+    "test": "node test/bkt-core.test.js"
+  },
+  "license": "CC-BY-4.0"
+}
