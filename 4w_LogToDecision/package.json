@@ -1,0 +1,11 @@
+{
+  "name": "log-to-decision",
+  "version": "1.0.0",
+  "description": "학습 로그를 지표로 줄이고 '이 위젯이 바꾸는 결정'을 붙이는 도구 — 적응형 학습과 AI 프로그래밍 4주 실습",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 5174",
+    "test": "node test/la-core.test.js"
+  },
+  "license": "CC-BY-4.0"
+}
